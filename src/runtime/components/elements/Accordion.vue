@@ -1,27 +1,28 @@
 <template>
   <div :class="ui.wrapper">
     <HDisclosure
-      v-for="(item, index) in items"
-      v-slot="{ open, close }"
-      :key="index"
-      as="div"
-      :class="ui.container"
-      :default-open="defaultOpen || item.defaultOpen"
+        v-for="(item, index) in items"
+        v-slot="{ open, close }"
+        :key="index"
+        as="div"
+        :class="ui.container"
+        :default-open="defaultOpen || item.defaultOpen"
     >
       <HDisclosureButton
-        :ref="() => buttonRefs[index] = { open, close }"
-        as="template"
-        :disabled="item.disabled"
-        @click="closeOthers(index, $event)"
-        @keydown.enter="closeOthers(index, $event)"
-        @keydown.space="closeOthers(index, $event)"
+          :ref="() => buttonRefs[index] = { open, close }"
+          as="template"
+          :disabled="item.disabled"
+          @click="closeOthers(index, $event)"
+          @keydown.enter="closeOthers(index, $event)"
+          @keydown.space="closeOthers(index, $event)"
       >
         <slot :item="item" :index="index" :open="open" :close="close">
-          <UButton v-bind="{ ...omit(ui.default, ['openIcon', 'closeIcon']), ...attrs, ...omit(item, ['slot', 'disabled', 'content', 'defaultOpen']) }">
+          <UButton
+              v-bind="{ ...omit(ui.default, ['openIcon', 'closeIcon']), ...attrs, ...omit(item, ['slot', 'disabled', 'content', 'defaultOpen']) }">
             <template #trailing>
               <UIcon
-                :name="!open ? openIcon : closeIcon ? closeIcon : openIcon"
-                :class="[
+                  :name="!open ? openIcon : closeIcon ? closeIcon : openIcon"
+                  :class="[
                   open && !closeIcon ? '-rotate-180' : '',
                   uiButton.icon.size[item.size || uiButton.default.size],
                   ui.item.icon
@@ -33,26 +34,38 @@
       </HDisclosureButton>
 
       <Transition
-        v-bind="ui.transition"
-        @enter="onEnter"
-        @after-enter="onAfterEnter"
-        @before-leave="onBeforeLeave"
-        @leave="onLeave"
+          v-bind="ui.transition"
+          @enter="onEnter"
+          @after-enter="onAfterEnter"
+          @before-leave="onBeforeLeave"
+          @leave="onLeave"
       >
         <HDisclosurePanel
-          v-if="unmount"
-          :class="[ui.item.base, ui.item.size, ui.item.color, ui.item.padding]"
-          unmount
+            v-if="unmount"
+            :class="[ui.item.base, ui.item.size, ui.item.color, ui.item.padding]"
+            unmount
         >
           <slot :name="item.slot || 'item'" :item="item" :index="index" :open="open" :close="close">
             {{ item.content }}
           </slot>
         </HDisclosurePanel>
+        <template v-else-if="content!=null">
+          <div v-show="open">
+            <HDisclosurePanel
+                :class="[ui.item.base, ui.item.size, ui.item.color, ui.item.padding]"
+                static
+            >
+              <slot :name="`${item.key}-header`">
+
+              </slot>
+            </HDisclosurePanel>
+          </div>
+        </template>
         <template v-else>
           <div v-show="open">
             <HDisclosurePanel
-              :class="[ui.item.base, ui.item.size, ui.item.color, ui.item.padding]"
-              static
+                :class="[ui.item.base, ui.item.size, ui.item.color, ui.item.padding]"
+                static
             >
               <slot :name="item.slot || 'item'" :item="item" :index="index" :open="open" :close="close">
                 {{ item.content }}
@@ -65,24 +78,24 @@
   </div>
 </template>
 
-<script lang="ts">
-import { ref, computed, toRef, defineComponent, watch } from 'vue'
-import type { PropType } from 'vue'
-import { Disclosure as HDisclosure, DisclosureButton as HDisclosureButton, DisclosurePanel as HDisclosurePanel, provideUseId } from '@headlessui/vue'
-import UIcon from '../elements/Icon.vue'
-import UButton from '../elements/Button.vue'
-import { useUI } from '../../composables/useUI'
-import { mergeConfig, omit } from '../../utils'
-import type { AccordionItem, Strategy } from '../../types/index'
-// @ts-expect-error
-import appConfig from '#build/app.config'
-import { accordion, button } from '#ui/ui.config'
-import { useId } from '#imports'
+<script>
+import {ref, computed, toRef, defineComponent, watch} from "vue";
+import {
+  Disclosure as HDisclosure,
+  DisclosureButton as HDisclosureButton,
+  DisclosurePanel as HDisclosurePanel,
+  provideUseId
+} from "@headlessui/vue";
+import UIcon from "../elements/Icon.vue";
+import UButton from "../elements/Button.vue";
+import {useUI} from "../../composables/useUI";
+import {mergeConfig, omit} from "../../utils";
+import appConfig from "#build/app.config";
+import {accordion, button} from "#ui/ui.config";
+import {useId} from "#imports";
 
-const config = mergeConfig<typeof accordion>(appConfig.ui.strategy, appConfig.ui.accordion, accordion)
-
-const configButton = mergeConfig<typeof button>(appConfig.ui.strategy, appConfig.ui.button, button)
-
+const config = mergeConfig(appConfig.ui.strategy, appConfig.ui.accordion, accordion);
+const configButton = mergeConfig(appConfig.ui.strategy, appConfig.ui.button, button);
 export default defineComponent({
   components: {
     HDisclosure,
@@ -94,7 +107,7 @@ export default defineComponent({
   inheritAttrs: false,
   props: {
     items: {
-      type: Array as PropType<AccordionItem[]>,
+      type: Array,
       default: () => []
     },
     defaultOpen: {
@@ -109,6 +122,10 @@ export default defineComponent({
       type: Boolean,
       default: false
     },
+    content: {
+      type: [String, Object, Array],
+      default: () => ""
+    },
     closeIcon: {
       type: String,
       default: () => config.default.closeIcon
@@ -118,75 +135,67 @@ export default defineComponent({
       default: false
     },
     class: {
-      type: [String, Object, Array] as PropType<any>,
-      default: () => ''
+      type: [String, Object, Array],
+      default: () => ""
     },
     ui: {
-      type: Object as PropType<Partial<typeof config> & { strategy?: Strategy }>,
+      type: Object,
       default: () => ({})
     }
   },
-  emits: ['open'],
-  setup (props, { emit }) {
-    const { ui, attrs } = useUI('accordion', toRef(props, 'ui'), config, toRef(props, 'class'))
-
-    const uiButton = computed<typeof configButton>(() => configButton)
-
-    const buttonRefs = ref<{ open: boolean, close: (e: EventTarget) => {} }[]>([])
-
-    const openedStates = computed(() => buttonRefs.value.map(({ open }) => open))
+  emits: ["open"],
+  setup(props, {emit}) {
+    const {ui, attrs} = useUI("accordion", toRef(props, "ui"), config, toRef(props, "class"));
+    const uiButton = computed(() => configButton);
+    const buttonRefs = ref([]);
+    const openedStates = computed(() => buttonRefs.value.map(({open}) => open));
     watch(openedStates, (newValue, oldValue) => {
       for (const index in newValue) {
-        const isOpenBefore = oldValue[index]
-        const isOpenAfter = newValue[index]
-
+        const isOpenBefore = oldValue[index];
+        const isOpenAfter = newValue[index];
         if (!isOpenBefore && isOpenAfter) {
-          emit('open', index)
+          emit("open", index);
         }
       }
-    }, { immediate: true })
+    }, {immediate: true});
 
-    function closeOthers (currentIndex: number, e: Event) {
+    function closeOthers(currentIndex, e) {
       if (!props.items[currentIndex].closeOthers && props.multiple) {
-        return
+        return;
       }
-
-      buttonRefs.value.forEach((button) => {
-        if (button.open) {
-          button.close(e.target as EventTarget)
+      buttonRefs.value.forEach((button2) => {
+        if (button2.open) {
+          button2.close(e.target);
         }
-      })
+      });
     }
 
-    function onEnter (_el: Element, done: () => void) {
-      const el = _el as HTMLElement
-      el.style.height = '0'
-      el.offsetHeight // Trigger a reflow, flushing the CSS changes
-      el.style.height = el.scrollHeight + 'px'
-
-      el.addEventListener('transitionend', done, { once: true })
+    function onEnter(_el, done) {
+      const el = _el;
+      el.style.height = "0";
+      el.offsetHeight;
+      el.style.height = el.scrollHeight + "px";
+      el.addEventListener("transitionend", done, {once: true});
     }
 
-    function onBeforeLeave (_el: Element) {
-      const el = _el as HTMLElement
-      el.style.height = el.scrollHeight + 'px'
-      el.offsetHeight // Trigger a reflow, flushing the CSS changes
+    function onBeforeLeave(_el) {
+      const el = _el;
+      el.style.height = el.scrollHeight + "px";
+      el.offsetHeight;
     }
 
-    function onAfterEnter (_el: Element) {
-      const el = _el as HTMLElement
-      el.style.height = 'auto'
+    function onAfterEnter(_el) {
+      const el = _el;
+      el.style.height = "auto";
     }
 
-    function onLeave (_el: Element, done: () => void) {
-      const el = _el as HTMLElement
-      el.style.height = '0'
-
-      el.addEventListener('transitionend', done, { once: true })
+    function onLeave(_el, done) {
+      const el = _el;
+      el.style.height = "0";
+      el.addEventListener("transitionend", done, {once: true});
     }
 
-    provideUseId(() => useId())
-
+    provideUseId(() => useId());
     return {
       // eslint-disable-next-line vue/no-dupe-keys
       ui,
@@ -194,12 +203,12 @@ export default defineComponent({
       attrs,
       buttonRefs,
       closeOthers,
-      omit: (omit as any),
+      omit,
       onEnter,
       onBeforeLeave,
       onAfterEnter,
       onLeave
-    }
+    };
   }
-})
+});
 </script>
